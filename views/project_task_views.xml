@@ -5,6 +5,9 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_subtask']" position="attributes">
+                <attribute name="attrs">{'invisible': ['|', ('deliverable_item_ids','!=',[]), '|', ('allow_subtasks', '=', False), ('id', '=', False)]}</attribute>
+            </xpath>
             <page name="extra_info" position="after">
                 <page name="deliverables" string="Deliverable Items"
                       attrs="{'invisible': [('use_deliverables', '=', False)]}">
