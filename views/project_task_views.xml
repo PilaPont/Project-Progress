@@ -10,7 +10,7 @@
             </xpath>
             <page name="extra_info" position="after">
                 <page name="deliverables" string="Deliverable Items"
-                      attrs="{'invisible': [('use_deliverables', '=', False)]}">
+                      attrs="{'invisible': ['|', ('use_deliverables', '=', False), ('subtask_count', '!=', 0)]}">
                     <group>
                         <group>
                             <label for="done_deliverable_items_count" string="deliverables Status"/>
