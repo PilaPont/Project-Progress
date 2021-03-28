@@ -6,24 +6,24 @@
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
             <page name="extra_info" position="after">
-                <page name="checklist" string="Checklist"
+                <page name="deliverables" string="Deliverable Items"
                       attrs="{'invisible': [('use_deliverables', '=', False)]}">
                     <group>
                         <group>
-                            <label for="checklist_done_items_count" string="Checklist Status"/>
+                            <label for="done_deliverable_items_count" string="deliverables Status"/>
                             <div>
                                 <field name="use_deliverables" invisible="True"/>
-                                <field name="checklist_done_items_count" class="oe_inline"/>
-                                <label for="checklist_items_count" class="oe_inline" string="/"/>
-                                <field name="checklist_items_count" class="oe_inline"/>
+                                <field name="done_deliverable_items_count" class="oe_inline"/>
+                                <label for="deliverable_items_count" class="oe_inline" string="/"/>
+                                <field name="deliverable_items_count" class="oe_inline"/>
                             </div>
                         </group>
                         <group>
-                            <field name="checklist_progress" widget="progressbar"/>
+                            <field name="deliverables_progress" widget="progressbar"/>
                         </group>
                     </group>
 
-                    <field name="checklist_item_ids">
+                    <field name="deliverable_item_ids">
                         <tree editable="buttom" decoration-muted="done == True">
                             <field name="sequence" widget="handle"/>
                             <field name="name"/>
@@ -42,7 +42,7 @@
         <field name="inherit_id" ref="project.view_task_tree2"/>
         <field name="arch" type="xml">
             <field name="stage_id" position="before">
-                <field name="checklist_progress" widget="progressbar"/>
+                <field name="deliverables_progress" widget="progressbar"/>
             </field>
         </field>
     </record>
@@ -53,11 +53,11 @@
         <field name="inherit_id" ref="project.view_task_kanban"/>
         <field name="arch" type="xml">
             <xpath expr="//templates" position="before">
-                <field name="checklist_progress"/>
+                <field name="deliverables_progress"/>
             </xpath>
             <xpath expr="//field[@name='tag_ids']" position="before">
                 <div class="text-right">
-                    <field name="checklist_progress" widget="gauge"
+                    <field name="deliverables_progress" widget="gauge"
                            options="{'style': 'width:50%;height:30%;cursor:pointer;'}">
                         Weighted Progress
                     </field>
