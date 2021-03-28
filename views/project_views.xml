@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="edit_project" model="ir.ui.view">
+        <field name="name">project.project.form</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <page name="settings" position="inside">
+                <group>
+                    <group>
+                        <field name="use_deliverables"/>
+                        <field name="use_deliverables_weighting"
+                               attrs="{'invisible': [('use_deliverables', '=', False)]}"/>
+                        <field name="deliverables_weighting_method"
+                               attrs="{'invisible': [('use_deliverables_weighting', '=', False)]}"/>
+                    </group>
+                    <group>
+                        <field name="task_weighting"/>
+                        <field name="automatic_task_weighting"
+                               attrs="{'invisible': ['|', '|', ('use_deliverables', '=', False),
+                               ('use_deliverables_weighting', '=', False), ('task_weighting', '=', False)]}"/>
+                    </group>
+                </group>
+            </page>
+        </field>
+    </record>
+</odoo>
