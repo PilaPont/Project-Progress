@@ -22,6 +22,16 @@
                     </group>
                 </group>
             </page>
+            <xpath expr="//notebook" position="inside">
+                <page name="statistics" string="Statistics">
+                    <group>
+                        <group>
+                            <field name="project_progress" widget="progressbar"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
         </field>
     </record>
 </odoo>
+

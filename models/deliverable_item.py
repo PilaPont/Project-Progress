@@ -19,9 +19,9 @@ class ProjectTask(models.Model):
     deliverable_item_ids = fields.One2many('deliverable.item', 'task_id', string='Check List')
     deliverables_progress = fields.Float(compute='compute_deliverables_stats', string='Weighted progress', store=True)
     deliverable_items_count = fields.Integer(compute='compute_deliverables_stats', string='Total Deliverable Items',
-                                           store=True)
+                                             store=True)
     done_deliverable_items_count = fields.Integer(compute='compute_deliverables_stats', string='Done Deliverable Items',
-                                                store=True)
+                                                  store=True)
     use_deliverables = fields.Boolean(related='project_id.use_deliverables')
 
 
