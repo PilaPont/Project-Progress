@@ -11,14 +11,15 @@
                         <field name="use_deliverables"/>
                         <field name="use_deliverables_weighting"
                                attrs="{'invisible': [('use_deliverables', '=', False)]}"/>
-                        <field name="deliverables_weighting_method"
-                               attrs="{'invisible': [('use_deliverables_weighting', '=', False)]}"/>
+                        <field name="deliverables_weighting_method" widget="radio"
+                               attrs="{'invisible': [('use_deliverables_weighting', '=', False)],
+                               'required': [('use_deliverables_weighting', '=', True)]}"/>
                     </group>
                     <group>
                         <field name="task_weighting"/>
                         <field name="automatic_task_weighting"
-                               attrs="{'invisible': ['|', '|', ('use_deliverables', '=', False),
-                               ('use_deliverables_weighting', '=', False), ('task_weighting', '=', False)]}"/>
+                               attrs="{'invisible': ['|', '|', '|', ('use_deliverables', '=', False),
+                               ('use_deliverables_weighting', '=', False), ('task_weighting', '=', False), ('deliverables_weighting_method', '=', 'within_task')]}"/>
                     </group>
                 </group>
             </page>

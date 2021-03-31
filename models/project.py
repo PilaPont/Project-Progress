@@ -9,18 +9,28 @@ class Project(models.Model):
     use_deliverables_weighting = fields.Boolean()
     deliverables_weighting_method = fields.Selection([
         ('within_task', 'Within Task'),
-        ('within_project', 'Within Project'),
-    ])
+        ('within_project', 'Within Project')],
+        default='within_task')
     task_weighting = fields.Boolean()
     automatic_task_weighting = fields.Boolean(help='based on deliverable items weighting')
     project_progress = fields.Float(compute='_compute_project_progress', store=True)
 
-    @api.depends('task_ids', 'task_ids.is_closed')
+    @api.depends('task_ids', 'task_ids.normal_task_weight', 'task_ids.task_progress')
     def _compute_project_progress(self):
         tasks = self.env['project.task'].search([('project_id', 'in', self.ids)])
         for project in self:
             project_tasks = tasks.filtered(lambda t: t.project_id == project)
             project.project_progress = sum(task.task_progress * task.normal_task_weight for task in project_tasks)
+
+    @api.onchange('deliverables_weighting_method')
+    def _onchange_consignee_id(self):
+        if self.deliverables_weighting_method == 'within_task':
+            self.automatic_task_weighting = False
+
+    @api.onchange('use_deliverables')
+    def _onchange_consignee_id(self):
+        if not self.use_deliverables:
+            self.use_deliverables_weighting = False
 
 
 class ProjectTask(models.Model):
@@ -38,7 +48,8 @@ class ProjectTask(models.Model):
             rec.deliverable_items_count = len(total_items)
             rec.done_deliverable_items_count = len(done_items)
 
-    @api.depends('child_ids', 'deliverable_item_ids', 'deliverables_progress')
+    @api.depends('child_ids', 'deliverable_item_ids', 'child_ids.normal_task_weight',
+                 'child_ids.task_progress', 'child_ids.is_closed')
     def _compute_task_progress(self):
         for task in self:
             if task.is_closed:
@@ -64,8 +75,6 @@ class ProjectTask(models.Model):
         for item in projects_sum_task_weight:
             projects_sum_task_weight_dict[item['project_id'][0]] = item['task_weight']
         for task in self:
-            import logging
-            logging.critical(projects_sum_task_weight_dict)
             task.normal_task_weight = task.task_weight / projects_sum_task_weight_dict[task.project_id.id]
 
     task_weight = fields.Float(compute='_compute_task_weight', store=True)
@@ -79,3 +88,4 @@ class ProjectTask(models.Model):
                                                   store=True)
     use_deliverables = fields.Boolean(related='project_id.use_deliverables')
     task_weighting = fields.Boolean(related='project_id.task_weighting')
+    automatic_task_weighting = fields.Boolean(related='project_id.automatic_task_weighting')
