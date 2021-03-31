@@ -12,7 +12,8 @@
             </xpath>
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="task_weight" attrs="{'invisible': [('task_weighting', '=', False)]}"/>
-                <field name="task_progress" attrs="{'invisible': [('task_weighting', '=', False)]}"/>
+                <field name="normal_task_weight" attrs="{'invisible': [('task_weighting', '=', False)]}" widget="percentage"/>
+                <field name="task_progress" attrs="{'invisible': [('task_weighting', '=', False)]}" widget="progressbar"/>
             </xpath>
             <page name="extra_info" position="after">
                 <page name="deliverables" string="Deliverable Items"
