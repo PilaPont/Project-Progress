@@ -6,7 +6,13 @@
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
             <xpath expr="//button[@name='action_subtask']" position="attributes">
-                <attribute name="attrs">{'invisible': ['|', ('deliverable_item_ids','!=',[]), '|', ('allow_subtasks', '=', False), ('id', '=', False)]}</attribute>
+                <attribute name="attrs">{
+                    'invisible': ['|', ('deliverable_item_ids', '!=', []), '|', ('allow_subtasks', '=', False),
+                                  ('id', '=', False)]}</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="task_weight" attrs="{'invisible': [('task_weighting', '=', False)]}"/>
+                <field name="task_progress" attrs="{'invisible': [('task_weighting', '=', False)]}"/>
             </xpath>
             <page name="extra_info" position="after">
                 <page name="deliverables" string="Deliverable Items"
@@ -16,6 +22,7 @@
                             <label for="done_deliverable_items_count" string="deliverables Status"/>
                             <div>
                                 <field name="use_deliverables" invisible="True"/>
+                                <field name="task_weighting" invisible="True"/>
                                 <field name="done_deliverable_items_count" class="oe_inline"/>
                                 <label for="deliverable_items_count" class="oe_inline" string="/"/>
                                 <field name="deliverable_items_count" class="oe_inline"/>
