@@ -20,10 +20,7 @@ class Project(models.Model):
         tasks = self.env['project.task'].search([('project_id', 'in', self.ids)])
         for project in self:
             project_tasks = tasks.filtered(lambda t: t.project_id == project)
-            if not project.task_weighting:
-                total_tasks_count = len(project_tasks)
-                done_tasks_count = len(project_tasks.filtered(lambda t: t.is_closed))
-                project.project_progress = done_tasks_count / total_tasks_count * 100
+            project.project_progress = sum(task.task_progress * task.normal_task_weight for task in project_tasks)
 
 
 class ProjectTask(models.Model):
