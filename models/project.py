@@ -14,6 +14,8 @@ class Project(models.Model):
     task_weighting = fields.Boolean()
     automatic_task_weighting = fields.Boolean(help='based on deliverable items weighting')
     project_progress = fields.Float(compute='_compute_project_progress', store=True)
+    deliverable_item_ids = fields.One2many(comodel_name='deliverable.item', inverse_name='project_id',
+                                           string='Deliverable Items')
 
     @api.depends('task_ids', 'task_ids.task_normal_weight', 'task_ids.task_progress')
     def _compute_project_progress(self):
@@ -102,7 +104,8 @@ class ProjectTask(models.Model):
     task_progress = fields.Float(compute='_compute_task_progress', store=True, default=0)
     subtask_progress = fields.Float(compute='_compute_subtask_progress', store=True)
     deliverable_progress = fields.Float(compute='compute_deliverables_stats', string='Weighted progress', store=True)
-    deliverable_item_ids = fields.One2many('deliverable.item', 'task_id', string='Check List')
+    deliverable_item_ids = fields.One2many(comodel_name='deliverable.item', inverse_name='task_id',
+                                           string='Deliverable Items')
     deliverable_items_count = fields.Integer(compute='compute_deliverables_stats', string='Total Deliverable Items',
                                              store=True)
     done_deliverable_items_count = fields.Integer(compute='compute_deliverables_stats', string='Done Deliverable Items',

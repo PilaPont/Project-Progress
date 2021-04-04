@@ -28,10 +28,18 @@
                     <group>
                         <group>
                             <field name="project_progress" widget="progressbar"/>
+                            <field name="deliverable_item_ids" attrs="{'invisible': [('deliverables_weighting_method', '!=', 'within_project')]}">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="weight"/>
+                                    <field name="normal_weight" widget="percentage"/>
+                                </tree>
+                            </field>
                         </group>
                     </group>
                 </page>
             </xpath>
+
         </field>
     </record>
 </odoo>

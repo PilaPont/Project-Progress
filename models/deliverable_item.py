@@ -13,7 +13,7 @@ class DeliverableItem(models.Model):
     task_id = fields.Many2one('project.task')
     project_id = fields.Many2one('project.project', related='task_id.project_id', store=True)
     use_deliverables_weighting = fields.Boolean(related='project_id.use_deliverables_weighting')
-    deliverables_weighting_method = fields.Boolean(related='project_id.deliverables_weighting_method')
+    deliverables_weighting_method = fields.Selection(related='project_id.deliverables_weighting_method')
 
     _sql_constraints = [
         ('name_task_uniq', 'unique (name,task_id)', "Deliverable items should be unique!"),
