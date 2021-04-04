@@ -10,10 +10,13 @@
                     'invisible': ['|', ('deliverable_item_ids', '!=', []), '|', ('allow_subtasks', '=', False),
                                   ('id', '=', False)]}</attribute>
             </xpath>
+            <xpath expr="//field[@name='parent_id']" position="attributes">
+                <attribute name="domain">[('deliverable_items_count', '=', 0)]</attribute>
+            </xpath>
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="task_weight"
                        attrs="{'invisible': [('task_weighting', '=', False)], 'readonly': [('automatic_task_weighting', '=', True)]}"/>
-                <field name="normal_task_weight" attrs="{'invisible': [('task_weighting', '=', False)]}"
+                <field name="task_normal_weight" attrs="{'invisible': [('task_weighting', '=', False)]}"
                        widget="percentage"/>
                 <field name="task_progress" attrs="{'invisible': [('task_weighting', '=', False)]}"
                        widget="progressbar"/>
@@ -34,7 +37,7 @@
                             </div>
                         </group>
                         <group>
-                            <field name="deliverables_progress" widget="progressbar"/>
+                            <field name="deliverable_progress" widget="progressbar"/>
                         </group>
                     </group>
 
@@ -42,7 +45,12 @@
                         <tree editable="buttom" decoration-muted="done == True">
                             <field name="sequence" widget="handle"/>
                             <field name="name"/>
-                            <field name="weight"/>
+                            <field name="use_deliverables_weighting" invisible="True"/>
+                            <field name="weight"
+                                   attrs="{'invisible': [('use_deliverables_weighting', '=', False)]}"/>
+                            <field name="normal_weight"
+                                   attrs="{'invisible': [('use_deliverables_weighting', '=', False)]}"
+                                   widget="percentage"/>
                             <field name="done"/>
                         </tree>
                     </field>
@@ -57,7 +65,7 @@
         <field name="inherit_id" ref="project.view_task_tree2"/>
         <field name="arch" type="xml">
             <field name="stage_id" position="before">
-                <field name="deliverables_progress" widget="progressbar"/>
+                <field name="deliverable_progress" widget="progressbar"/>
             </field>
         </field>
     </record>
@@ -68,11 +76,11 @@
         <field name="inherit_id" ref="project.view_task_kanban"/>
         <field name="arch" type="xml">
             <xpath expr="//templates" position="before">
-                <field name="deliverables_progress"/>
+                <field name="deliverable_progress"/>
             </xpath>
             <xpath expr="//field[@name='tag_ids']" position="before">
                 <div class="text-right">
-                    <field name="deliverables_progress" widget="gauge"
+                    <field name="deliverable_progress" widget="gauge"
                            options="{'style': 'width:50%;height:30%;cursor:pointer;'}">
                         Weighted Progress
                     </field>
