@@ -6,13 +6,14 @@ class DeliverableItem(models.Model):
     _description = 'Deliverable Items'
 
     name = fields.Char(string='Description', required=True)
-    weight = fields.Float(compute='_compute_weight', store=True)
+    weight = fields.Float(compute='_compute_weight', store=True, readonly=False)
     normal_weight = fields.Float(compute='_compute_normal_weight', store=True)
     done = fields.Boolean(default=False)
     sequence = fields.Integer()
     task_id = fields.Many2one('project.task')
     project_id = fields.Many2one('project.project', related='task_id.project_id', store=True)
     use_deliverables_weighting = fields.Boolean(related='project_id.use_deliverables_weighting')
+    deliverables_weighting_method = fields.Boolean(related='project_id.deliverables_weighting_method')
 
     _sql_constraints = [
         ('name_task_uniq', 'unique (name,task_id)', "Deliverable items should be unique!"),
@@ -29,7 +30,7 @@ class DeliverableItem(models.Model):
             if not deliverable.use_deliverables_weighting:
                 deliverable.weight = 1
 
-    @api.depends('weight')
+    @api.depends('weight', 'deliverables_weighting_method')
     def _compute_normal_weight(self):
         projects_sum_deliverable_weight = self.read_group(domain=[('project_id', 'in', self.mapped('project_id.id'))],
                                                           fields=['project_id', 'weight:sum(weight)'],
