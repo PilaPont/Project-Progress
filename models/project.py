@@ -107,9 +107,9 @@ class ProjectTask(models.Model):
     task_deliverables_total_weight = fields.Float(compute='_compute_task_deliverables_total_weight', store=True)
     project_total_task_weight = fields.Float(related='project_id.tasks_total_weight')
     task_normal_weight = fields.Float(compute='_compute_task_normal_weight', store=True)
-    task_progress = fields.Float(compute='_compute_task_progress', store=True, default=0)
+    task_progress = fields.Float(string='Progress', compute='_compute_task_progress', store=True, default=0)
     subtask_progress = fields.Float(compute='_compute_subtask_progress', store=True)
-    deliverable_progress = fields.Float(compute='compute_deliverables_stats', string='Weighted progress', store=True)
+    deliverable_progress = fields.Float(compute='compute_deliverables_stats', string='Progress', store=True)
     deliverable_item_ids = fields.One2many(comodel_name='deliverable.item', inverse_name='task_id',
                                            string='Deliverable Items')
     deliverable_items_count = fields.Integer(compute='compute_deliverables_stats', string='Total Deliverable Items',
