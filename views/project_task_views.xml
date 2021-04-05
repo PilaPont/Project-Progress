@@ -15,7 +15,7 @@
             </xpath>
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="task_weight"
-                       attrs="{'invisible': [('task_weighting', '=', False)], 'readonly': [('automatic_task_weighting', '=', True)]}"/>
+                       attrs="{'invisible': [('task_weighting', '=', False)], 'readonly': ['|', ('automatic_task_weighting', '=', True), ('child_ids', '!=', [])]}"/>
                 <field name="task_normal_weight" attrs="{'invisible': [('task_weighting', '=', False)]}"
                        widget="percentage"/>
                 <field name="task_progress" attrs="{'invisible': [('task_weighting', '=', False)]}"
@@ -65,7 +65,9 @@
         <field name="inherit_id" ref="project.view_task_tree2"/>
         <field name="arch" type="xml">
             <field name="stage_id" position="before">
-                <field name="deliverable_progress" widget="progressbar"/>
+                <field name="task_progress" widget="progressbar"
+                       options="{'style': 'width:50%;height:30%;cursor:pointer;'}">
+                </field>
             </field>
         </field>
     </record>
@@ -80,9 +82,8 @@
             </xpath>
             <xpath expr="//field[@name='tag_ids']" position="before">
                 <div class="text-right">
-                    <field name="deliverable_progress" widget="gauge"
+                    <field name="task_progress" widget="percentpie"
                            options="{'style': 'width:50%;height:30%;cursor:pointer;'}">
-                        Weighted Progress
                     </field>
                 </div>
             </xpath>
