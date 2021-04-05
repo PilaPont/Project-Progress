@@ -16,6 +16,8 @@ class Project(models.Model):
     project_progress = fields.Float(compute='_compute_project_progress', store=True)
     deliverable_item_ids = fields.One2many(comodel_name='deliverable.item', inverse_name='project_id',
                                            string='Deliverable Items')
+    deliverables_total_weight = fields.Float(compute='_compute_deliverables_total_weight', store=True)
+    tasks_total_weight = fields.Float(compute='_compute_tasks_total_weight', store=True)
 
     @api.depends('task_ids', 'task_ids.task_normal_weight', 'task_ids.task_progress')
     def _compute_project_progress(self):
@@ -23,6 +25,20 @@ class Project(models.Model):
         for project in self:
             project_tasks = tasks.filtered(lambda t: t.project_id == project)
             project.project_progress = sum(task.task_progress * task.task_normal_weight for task in project_tasks)
+
+    @api.depends('deliverables_weighting_method', 'deliverable_item_ids.weight')
+    def _compute_deliverables_total_weight(self):
+        import logging
+        for project in self.filtered(lambda p: p.deliverables_weighting_method == 'within_project'):
+            logging.critical('project total delis = {}'.format(sum(project.deliverable_item_ids.mapped('weight'))))
+            project.deliverables_total_weight = sum(project.deliverable_item_ids.mapped('weight'))
+
+    @api.depends('task_ids.task_weight')
+    def _compute_tasks_total_weight(self):
+        tasks = self.env['project.task'].search([('project_id', 'in', self.ids)])
+        for project in self:
+            project_tasks = tasks.filtered(lambda t: t.project_id == project)
+            project.tasks_total_weight = sum(project_tasks.mapped('task_weight'))
 
     @api.onchange('use_deliverables')
     def _onchange_use_deliverables(self):
@@ -73,33 +89,23 @@ class ProjectTask(models.Model):
 
     @api.depends('task_weighting', 'automatic_task_weighting')
     def _compute_task_weight(self):
-        projects_sum_deliverable_weight = self.env['deliverable.item'].read_group(
-            [('project_id', 'in', self.mapped('project_id.id'))],
-            ['project_id', 'weight:sum(weight)'],
-            groupby=['project_id'])
-        projects_sum_deliverable_weight_dict = dict()
-        for item in projects_sum_deliverable_weight:
-            projects_sum_deliverable_weight_dict[item['project_id'][0]] = item['weight']
-        for task in self:
-            if not task.task_weighting:
-                task.task_weight = 1
-            elif task.task_weight and task.automatic_task_weighting:
-                task.task_weight = sum(task.mapped('deliverable_item_ids.weight')) / \
-                                   projects_sum_deliverable_weight_dict[
-                                       task.project_id.id]
+        self.filtered(lambda rec: not rec.task_weighting).write({'task_weight': 1})
+        for task in self.filtered(lambda rec: rec.task_weighting and rec.automatic_task_weighting):
+            task.task_weight = sum(task.mapped('deliverable_item_ids.weight'))
 
-    @api.depends('task_weight')
-    def _compute_task_normal_weight(self):
-        projects_sum_task_weight = self.read_group([('project_id', 'in', self.mapped('project_id.id'))],
-                                                   ['project_id', 'task_weight:sum(task_weight)'],
-                                                   groupby=['project_id'])
-        projects_sum_task_weight_dict = dict()
-        for item in projects_sum_task_weight:
-            projects_sum_task_weight_dict[item['project_id'][0]] = item['task_weight']
+    @api.depends('deliverable_item_ids.weight')
+    def _compute_task_deliverables_total_weight(self):
         for task in self:
-            task.task_normal_weight = task.task_weight / projects_sum_task_weight_dict[task.project_id.id]
+            task.task_deliverables_total_weight = sum(task.deliverable_item_ids.mapped('weight'))
+
+    @api.depends('project_total_task_weight')
+    def _compute_task_normal_weight(self):
+        for task in self:
+            task.task_normal_weight = task.task_weight / task.project_total_task_weight
 
     task_weight = fields.Float(compute='_compute_task_weight', store=True)
+    task_deliverables_total_weight = fields.Float(compute='_compute_task_deliverables_total_weight', store=True)
+    project_total_task_weight = fields.Float(related='project_id.tasks_total_weight')
     task_normal_weight = fields.Float(compute='_compute_task_normal_weight', store=True)
     task_progress = fields.Float(compute='_compute_task_progress', store=True, default=0)
     subtask_progress = fields.Float(compute='_compute_subtask_progress', store=True)

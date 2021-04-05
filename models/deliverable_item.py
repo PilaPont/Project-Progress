@@ -14,6 +14,8 @@ class DeliverableItem(models.Model):
     project_id = fields.Many2one('project.project', related='task_id.project_id', store=True)
     use_deliverables_weighting = fields.Boolean(related='project_id.use_deliverables_weighting')
     deliverables_weighting_method = fields.Selection(related='project_id.deliverables_weighting_method')
+    task_deliverables_total_weight = fields.Float(related='task_id.task_deliverables_total_weight')
+    project_deliverables_total_weight = fields.Float(related='project_id.deliverables_total_weight')
 
     _sql_constraints = [
         ('name_task_uniq', 'unique (name,task_id)', "Deliverable items should be unique!"),
@@ -30,19 +32,29 @@ class DeliverableItem(models.Model):
             if not deliverable.use_deliverables_weighting:
                 deliverable.weight = 1
 
-    @api.depends('weight', 'deliverables_weighting_method')
+    @api.depends('project_deliverables_total_weight', 'task_deliverables_total_weight', 'deliverables_weighting_method')
     def _compute_normal_weight(self):
-        projects_sum_deliverable_weight = self.read_group(domain=[('project_id', 'in', self.mapped('project_id.id'))],
-                                                          fields=['project_id', 'weight:sum(weight)'],
-                                                          groupby=['project_id'])
-        projects_sum_deliverable_weight_dict = dict()
-        for item in projects_sum_deliverable_weight:
-            projects_sum_deliverable_weight_dict[item['project_id'][0]] = item['weight']
+        import logging
 
-        for deliverable in self:
-            if deliverable.task_id.deliverables_weighting_method == 'within_task':
-                deliverable.normal_weight = deliverable.weight / sum(
-                    deliverable.task_id.deliverable_item_ids.mapped('weight'))
+        within_task_deliverables = self.filtered(
+            lambda d: d.deliverables_weighting_method == 'within_task')
+        within_project_deliverables = self.filtered(
+            lambda d: d.deliverables_weighting_method == 'within_project')
+        logging.critical('within_task_deliverables = {}'.format(within_task_deliverables))
+        logging.critical('within_task_deliverables = {}'.format(within_task_deliverables))
+
+        for deliverable in self.env['deliverable.item'].search(
+                [('task_id', 'in', within_task_deliverables.mapped('task_id').ids)]):
+            if deliverable.task_deliverables_total_weight == 0:
+                deliverable.normal_weight = 0
             else:
-                deliverable.normal_weight = deliverable.weight / projects_sum_deliverable_weight_dict[
-                    deliverable.project_id.id]
+                deliverable.normal_weight = deliverable.weight / deliverable.task_deliverables_total_weight
+        for deliverable in self.env['deliverable.item'].search(
+                [('project_id', 'in', within_project_deliverables.mapped('project_id').ids)]):
+            logging.critical(
+                'deli.project_deliverables_total_weight ={}, {}'.format(deliverable.weight,
+                                                                        deliverable.project_deliverables_total_weight))
+            if deliverable.project_deliverables_total_weight == 0:
+                deliverable.normal_weight = 0
+            else:
+                deliverable.normal_weight = deliverable.weight / deliverable.project_deliverables_total_weight
