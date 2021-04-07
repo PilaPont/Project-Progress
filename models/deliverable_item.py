@@ -48,7 +48,8 @@ class DeliverableItem(models.Model):
             if deliverable.task_deliverables_total_weight == 0:
                 deliverable.normal_weight = 0
             else:
-                deliverable.normal_weight = deliverable.weight / deliverable.task_deliverables_total_weight
+                deliverable.normal_weight = deliverable.weight / deliverable.task_deliverables_total_weight if \
+                    deliverable.task_deliverables_total_weight else 0
         for deliverable in self.env['deliverable.item'].search(
                 [('project_id', 'in', within_project_deliverables.mapped('project_id').ids)]):
             logging.critical(
@@ -57,4 +58,5 @@ class DeliverableItem(models.Model):
             if deliverable.project_deliverables_total_weight == 0:
                 deliverable.normal_weight = 0
             else:
-                deliverable.normal_weight = deliverable.weight / deliverable.project_deliverables_total_weight
+                deliverable.normal_weight = deliverable.weight / deliverable.project_deliverables_total_weight if \
+                    deliverable.project_deliverables_total_weight else 0
