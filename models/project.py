@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import api, fields, models, exceptions, _
 
 
 class Project(models.Model):
@@ -18,6 +18,11 @@ class Project(models.Model):
                                            string='Deliverable Items')
     deliverables_total_weight = fields.Float(compute='_compute_deliverables_total_weight', store=True)
     tasks_total_weight = fields.Float(compute='_compute_tasks_total_weight', store=True)
+
+    @api.constrains('use_deliverables')
+    def _check_use_deliverables(self):
+        if self.filtered(lambda item: item.deliverable_item_ids):
+            raise exceptions.ValidationError(_('There are already deliverable items in this project.'))
 
     @api.depends('task_ids', 'task_ids.task_normal_weight', 'task_ids.task_progress')
     def _compute_project_progress(self):
