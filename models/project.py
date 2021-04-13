@@ -79,37 +79,51 @@ class ProjectTask(models.Model):
             total_weight = sum(total_items.mapped('weight'))
             if total_weight:  # constrains are checked at create time so it is possible to have zero weight at run time
                 task.deliverable_progress = sum(done_items.mapped('weight')) / total_weight * 100
+            else:
+                task.deliverable_progress = 0
             task.deliverable_items_count = len(total_items)
             task.done_deliverable_items_count = len(done_items)
 
-    @api.depends('child_ids', 'child_ids.task_normal_weight', 'child_ids.task_progress', 'child_ids.is_closed')
+    @api.depends('child_ids', 'child_ids.task_weight', 'child_ids.task_progress', 'child_ids.is_closed')
     def _compute_subtask_progress(self):
+        self.mapped('child_ids')._compute_task_progress()
         for task in self:
             import logging
-            logging.critical('task_name , subtasks_name = {}, {}'.format(task.name, task.child_ids.mapped('name')))
-            logging.critical('task_progress , subtasks_progress = {}, {}, {}'.format(task.task_progress,
-                                                                                     task.child_ids.mapped(
-                                                                                         'task_progress'),
-                                                                                     task.task_weight))
-            task.subtask_progress = sum(
-                subtask.task_progress * subtask.task_weight / task.task_weight if task.task_weight else 0 for subtask in
-                task.child_ids)
+            logging.critical('{} - subtasks_name = {}, '.format(task.name, task.child_ids.mapped('name')))
 
-    @api.depends('subtask_progress', 'deliverable_progress', 'is_closed')
+            logging.critical('{} - subtasks_we = {}'.format(task.name, task.child_ids.mapped('task_weight')))
+            total_subtask_weight = sum(task.child_ids.mapped('task_weight'))
+            logging.critical('{} - total_subtask_weight = {}'.format(task.name, total_subtask_weight))
+            logging.critical('{} - summmmmmmmmmmmmmmmmmmmmmmmmmmmm = {}'.format(task.name, sum(
+                subtask.task_progress * subtask.task_weight for
+                subtask in task.child_ids)))
+
+            task.subtask_progress = sum(
+                subtask.task_progress * subtask.task_weight for
+                subtask in task.child_ids) / total_subtask_weight if total_subtask_weight else 0
+            logging.critical('{} - task_progress , subtasks_progress = {}, {}, {}'.format(task.name, task.task_progress,
+                                                                                          task.child_ids.mapped(
+                                                                                              'task_progress'),
+                                                                                          task.task_weight))
+
+    @api.depends('subtask_progress', 'deliverable_progress', 'is_closed', 'child_ids', 'child_ids.task_progress')
     def _compute_task_progress(self):
         import logging
-        for task in self:
-            if task.is_closed:
-                task.task_progress = 100
-                logging.critical('task_pro = {}'.format(task.task_progress))
-            elif task.child_ids:
-                logging.critical('task_childs = {}'.format(task.child_ids))
-
-                task.task_progress = task.subtask_progress
-            elif task.deliverable_item_ids:
-                task.task_progress = task.deliverable_progress
-            else:
-                task.task_progress = 0
+        closed_tasks = self.filtered(lambda rec: rec.is_closed)
+        closed_tasks.write({'task_progress': 100})
+        remaining_tasks = self - closed_tasks
+        have_children = remaining_tasks.filtered(lambda rec: rec.child_ids)
+        for task in have_children:
+            task._compute_subtask_progress()
+            logging.critical('{} - task_childs = {}'.format(task.name, task.child_ids.mapped('name')))
+            task.task_progress = task.subtask_progress
+        remaining_tasks -= have_children
+        have_deliverables = remaining_tasks.filtered(lambda rec: rec.deliverable_item_ids)
+        have_deliverables.compute_deliverables_stats()
+        for task in have_deliverables:
+            task.task_progress = task.deliverable_progress
+        remaining_tasks -= have_deliverables
+        remaining_tasks.write({'task_progress': 0})
 
     @api.depends('task_weighting', 'automatic_task_weighting', 'child_ids', 'child_ids.task_weight')
     def _compute_task_weight(self):
