@@ -164,7 +164,8 @@ class TestWithTaskWaiting(TestProjectProgressCommonTasksWaiting):
 class TestWithTaskWaitingAndDeliverables(TestProjectProgressCommonTasksWaiting, TestProjectProgressCommonDeliverables):
     # case 4
     def test_with_task_waiting(self):
-        total_normal_weight = sum(self.env['project.task'].search([('project_id', '=', self.test_project.id)]).mapped(
+        total_normal_weight = sum(self.env['project.task'].search(
+            [('project_id', '=', self.test_project.id), ('child_ids', '=', False)]).mapped(
             'task_normal_weight'))
         self.assertEqual(float_compare(total_normal_weight, 1, 0), 0)
         self.assertEqual(float_compare(self.test_project.project_progress, 46, 0), 0)
@@ -191,7 +192,8 @@ class TestWithTaskWaitingAndDeliverablesWaiting(TestProjectProgressCommonTasksWa
 class TestWithDeliverablesWaiting(TestProjectProgressCommonDeliverablesWaiting):
     # case 8
     def test_deliverables_waiting_task_base(self):
-        total_normal_weight = sum(self.env['project.task'].search([('project_id', '=', self.test_project.id)]).mapped(
+        total_normal_weight = sum(self.env['project.task'].search(
+            [('project_id', '=', self.test_project.id), ('child_ids', '=', False)]).mapped(
             'task_normal_weight'))
         self.assertEqual(float_compare(total_normal_weight, 1, 0), 0)
         self.assertEqual(float_compare(self.test_project.project_progress, 36, 0), 0)
