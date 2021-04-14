@@ -29,9 +29,11 @@ class Project(models.Model):
         tasks = self.env['project.task'].search([('project_id', 'in', self.ids), ('child_ids', '=', False)])
         for project in self:
             project_tasks = tasks.filtered(lambda t: t.project_id == project)
+            project_tasks._compute_task_normal_weight()
+            project_tasks._compute_task_progress()
             import logging
             logging.critical(
-                'tasks = {} /n {} /n{}'.format(project_tasks.mapped('name'), project_tasks.mapped('task_normal_weight'),
+                'tasks = {} \n {} \n{}'.format(project_tasks.mapped('name'), project_tasks.mapped('task_normal_weight'),
                                                project_tasks.mapped('task_progress')))
             project.project_progress = sum(task.task_progress * task.task_normal_weight for task in project_tasks)
 
@@ -66,6 +68,11 @@ class Project(models.Model):
         if self.deliverables_weighting_method == 'within_task':
             self.automatic_task_weighting = False
 
+    @api.onchange('task_weighting')
+    def _onchange_task_weighting(self):
+        if not self.task_weighting:
+            self.automatic_task_weighting = False
+
 
 class ProjectTask(models.Model):
     _inherit = "project.task"
@@ -89,22 +96,11 @@ class ProjectTask(models.Model):
         self.mapped('child_ids')._compute_task_progress()
         for task in self:
             import logging
-            logging.critical('{} - subtasks_name = {}, '.format(task.name, task.child_ids.mapped('name')))
-
-            logging.critical('{} - subtasks_we = {}'.format(task.name, task.child_ids.mapped('task_weight')))
             total_subtask_weight = sum(task.child_ids.mapped('task_weight'))
-            logging.critical('{} - total_subtask_weight = {}'.format(task.name, total_subtask_weight))
-            logging.critical('{} - summmmmmmmmmmmmmmmmmmmmmmmmmmmm = {}'.format(task.name, sum(
-                subtask.task_progress * subtask.task_weight for
-                subtask in task.child_ids)))
 
             task.subtask_progress = sum(
                 subtask.task_progress * subtask.task_weight for
                 subtask in task.child_ids) / total_subtask_weight if total_subtask_weight else 0
-            logging.critical('{} - task_progress , subtasks_progress = {}, {}, {}'.format(task.name, task.task_progress,
-                                                                                          task.child_ids.mapped(
-                                                                                              'task_progress'),
-                                                                                          task.task_weight))
 
     @api.depends('subtask_progress', 'deliverable_progress', 'is_closed', 'child_ids', 'child_ids.task_progress')
     def _compute_task_progress(self):
@@ -115,7 +111,6 @@ class ProjectTask(models.Model):
         have_children = remaining_tasks.filtered(lambda rec: rec.child_ids)
         for task in have_children:
             task._compute_subtask_progress()
-            logging.critical('{} - task_childs = {}'.format(task.name, task.child_ids.mapped('name')))
             task.task_progress = task.subtask_progress
         remaining_tasks -= have_children
         have_deliverables = remaining_tasks.filtered(lambda rec: rec.deliverable_item_ids)
@@ -127,10 +122,18 @@ class ProjectTask(models.Model):
 
     @api.depends('task_weighting', 'automatic_task_weighting', 'child_ids', 'child_ids.task_weight')
     def _compute_task_weight(self):
-        self.filtered(lambda rec: rec.active and not rec.task_weighting).write({'task_weight': 1})
-        for task in self.filtered(lambda rec: rec.task_weighting and rec.subtask_count):
+        import logging
+        logging.critical('hereeeeeee')
+        active_tasks = self.filtered(lambda rec: rec.active)
+        tasks_without_weight = active_tasks.filtered(lambda rec: rec.active and not rec.task_weighting)
+        tasks_without_weight.write({'task_weight': 1})
+        remaining_tasks = active_tasks - tasks_without_weight
+        with_weight_and_children = remaining_tasks.filtered(lambda rec: rec.task_weighting and rec.subtask_count)
+        for task in with_weight_and_children:
             task.task_weight = sum(task.child_ids.filtered(lambda children: children.active).mapped('task_weight'))
-        for task in self.filtered(lambda rec: rec.task_weighting and rec.automatic_task_weighting):
+        remaining_tasks -= with_weight_and_children
+        with_weight_and_deliverables = remaining_tasks.filtered(lambda rec: rec.task_weighting and rec.automatic_task_weighting)
+        for task in with_weight_and_deliverables:
             task.task_weight = sum(task.mapped('deliverable_item_ids.weight'))
 
     @api.depends('deliverable_item_ids.weight')
