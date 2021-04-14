@@ -34,14 +34,10 @@ class DeliverableItem(models.Model):
 
     @api.depends('project_deliverables_total_weight', 'task_deliverables_total_weight', 'deliverables_weighting_method')
     def _compute_normal_weight(self):
-        import logging
-
         within_task_deliverables = self.filtered(
             lambda d: d.deliverables_weighting_method == 'within_task')
         within_project_deliverables = self.filtered(
             lambda d: d.deliverables_weighting_method == 'within_project')
-        logging.critical('within_task_deliverables = {}'.format(within_task_deliverables))
-        logging.critical('within_task_deliverables = {}'.format(within_task_deliverables))
 
         for deliverable in self.env['deliverable.item'].search(
                 [('task_id', 'in', within_task_deliverables.mapped('task_id').ids)]):
@@ -52,9 +48,6 @@ class DeliverableItem(models.Model):
                     deliverable.task_deliverables_total_weight else 0
         for deliverable in self.env['deliverable.item'].search(
                 [('project_id', 'in', within_project_deliverables.mapped('project_id').ids)]):
-            logging.critical(
-                'deli.project_deliverables_total_weight ={}, {}'.format(deliverable.weight,
-                                                                        deliverable.project_deliverables_total_weight))
             if deliverable.project_deliverables_total_weight == 0:
                 deliverable.normal_weight = 0
             else:
