@@ -36,9 +36,6 @@
                                 <field name="deliverable_items_count" class="oe_inline"/>
                             </div>
                         </group>
-                        <group>
-                            <field name="deliverable_progress" widget="progressbar"/>
-                        </group>
                     </group>
 
                     <field name="deliverable_item_ids">
